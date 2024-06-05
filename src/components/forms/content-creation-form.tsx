@@ -17,6 +17,8 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import generateContent from "@/actions/generate-content";
 import { generatePPT } from "@/lib/generate-ppt";
+import { toast } from "sonner";
+import { useLoadingModal } from "@/hooks/use-loading";
 
 type Props = {
   topic: string;
@@ -40,11 +42,26 @@ const ContentCreationForm = () => {
     resolver: zodResolver(contentCreationSchema),
   });
 
+  const loadingModal = useLoadingModal();
+
   const onSubmit = async (data: Input) => {
+    loadingModal.onOpen();
+    const toastId = toast.loading("generating pdf..");
+
     const { success, error } = await generateContent(data.topic);
     if (success) {
       await generatePPT(success, data.topic);
+      loadingModal.onClose();
+
+      toast.dismiss(toastId);
+      return toast.success("Flie generation Successfull!🎉");
     }
+
+    toast.error("Opps something went wrong!", {
+      description: "Please try again",
+    });
+
+    loadingModal.onClose();
   };
   form.watch();
 
